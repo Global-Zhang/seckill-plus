@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.seckillPlus.mapper.UserMapper">
+
+    <select id="selectById" parameterType="String" resultType="org.example.seckillPlus.pojo.User">
+        select
+            mobile,
+            password,
+            salt,
+            username
+        from
+            t_user
+        where
+            mobile = #{mobile}
+    </select>
+
+</mapper>
