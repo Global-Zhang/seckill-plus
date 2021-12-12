@@ -2,7 +2,9 @@ package org.example.seckillPlus.controller;
 
 import org.example.seckillPlus.pojo.User;
 import org.example.seckillPlus.service.IGoodsService;
+import org.example.seckillPlus.vo.DetailVo;
 import org.example.seckillPlus.vo.GoodsVo;
+import org.example.seckillPlus.vo.RespBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -38,57 +40,38 @@ public class GoodsController {
     @Autowired
     private ThymeleafViewResolver thymeleafViewResolver;
 
-    @RequestMapping(value = "/toDetail/{goodsId}" ,produces = "text/html;charset=utf-8")
-    //2.0-加入servlet方便thymeleaf渲染，将页面跳转变为返回对象，produce的就是对象
-    //public String toDetail(Model model,User user,@PathVariable("goodsId") Long goodsId)
+    //实现页面静态化
+    @RequestMapping(value = "/detail/{goodsId}")
     @ResponseBody
-    public String toDetail(Model model,User user,@PathVariable("goodsId") Long goodsId,HttpServletRequest request,HttpServletResponse response){
-
-        ValueOperations valueOperations = redisTemplate.opsForValue();
-        String html = (String) valueOperations.get("goodsDetail:"+goodsId);
-        if (!StringUtils.isEmpty(html)){
-            return html;
-        }
-
-        model.addAttribute("user",user);
+    public RespBean toDetail(HttpServletRequest request, HttpServletResponse response, Model model, User user, @PathVariable Long goodsId) {
         GoodsVo goods = goodsService.findGoodsVoByGoodsId(goodsId);
-        model.addAttribute("goods",goods);
-        Date endDate = goods.getEndDate();
         Date startDate = goods.getStartDate();
+        Date endDate = goods.getEndDate();
         Date nowDate = new Date();
         //秒杀状态
-        int seckillStatus = 0;
+        int secKillStatus = 0;
         //剩余开始时间
         int remainSeconds = 0;
-        //秒杀未开始
-        if (nowDate.before(startDate)){
-            remainSeconds = (int)((startDate.getTime() - nowDate.getTime())/1000);
-        }
-        //秒杀已结束
-        else if (nowDate.after(endDate)){
-            seckillStatus = 2;
+        //未开始
+        if (nowDate.before(startDate)) {
+            remainSeconds = (int) ((startDate.getTime() - nowDate.getTime()) / 1000);
+            // 秒杀已结束
+        } else if (nowDate.after(endDate)) {
+            secKillStatus = 2;
             remainSeconds = -1;
-        }
-        //秒杀中
-        else {
-            seckillStatus = 1;
+            // 秒杀中
+        } else {
+            secKillStatus = 1;
             remainSeconds = 0;
         }
-        model.addAttribute("secKillStatus",seckillStatus);
-        model.addAttribute("remainSeconds",remainSeconds);
-
-        //手动渲染，并存入redis，返回页面
-        WebContext context = new WebContext(request,response, request.getServletContext(),request.getLocale(), model.asMap());
-        html = thymeleafViewResolver.getTemplateEngine().process("goodsDetail",context);
-
-        //存入redis
-        if (!StringUtils.isEmpty(html)){
-            valueOperations.set("goodsDetail"+goodsId,html,60,TimeUnit.SECONDS);
-        }
-
-        return html;
-        //return "goodsDetail";
+        DetailVo detailVo = new DetailVo();
+        detailVo.setGoodsVo(goods);
+        detailVo.setUser(user);
+        detailVo.setRemainSeconds(remainSeconds);
+        detailVo.setSecKillStatus(secKillStatus);
+        return RespBean.success(detailVo);
     }
+
 
     @RequestMapping(value = "toList",produces = "text/html;charset=utf-8")
     @ResponseBody

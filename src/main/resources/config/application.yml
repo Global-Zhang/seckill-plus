@@ -12,6 +12,25 @@ spring:
     url: jdbc:mysql://localhost:3306/seckill?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
     password: root
+  #静态资源处理
+  resources:
+    #启用默认静态资源处理，默认启用
+    add-mappings: true
+    cache:
+      cachecontrol:
+        #缓存响应时间，单位秒
+        max-age: 3600
+    chain:
+      #资源链中启用缓存，默认启用
+      cache: true
+      #启用资源链，默认禁用
+      enabled: true
+      #启用压缩资源(gzip,brotli)解析,默认禁用
+      compressed: true
+      #启用H5应用缓存，默认禁用
+      html-application-cache: true
+     #静态资源位置
+    static-locations: classpath:/static/
 
   redis:
     #超时时间
@@ -57,9 +76,9 @@ mybatis-plus:
   #配置Mapper映射文件
   mapper-locations: classpath*:/mapper/*Mapper.xml
   # 配置MyBatis数据返回类型别名（默认别名是类名）
-  type-aliases-package: com.example.seckill.pojo
+  type-aliases-package: com.example.seckillPlus.pojo
 ## Mybatis SQL 打印(方法接口所在的包，不是Mapper.xml所在的包)
 logging:
   level:
-    com.example.seckill.mapper: debug
+    com.example.seckillPlus.mapper: debug
 
