@@ -145,6 +145,7 @@ public class SeckillController implements InitializingBean {
      * @param goodsId
      * @return
      */
+    //通用接口限流测试
     //通用接口限流，配置了UserContext、UserArgumentResolver、AccessInterceptor、WebConfig、AccessLimit
     @AccessLimit(second = 5, maxCount = 5, needLogin = true)
     @RequestMapping(value = "/path", method = RequestMethod.GET)
@@ -163,6 +164,7 @@ public class SeckillController implements InitializingBean {
         String str = orderService.createPath(user, goodsId);
         return RespBean.success(str);
     }
+    //简单接口限流
     /*简单接口限流
     @RequestMapping(value = "/path", method = RequestMethod.GET)
     @ResponseBody
