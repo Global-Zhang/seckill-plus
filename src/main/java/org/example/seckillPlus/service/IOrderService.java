@@ -29,4 +29,19 @@ public interface IOrderService extends IService<Order> {
          * @return
          */
         OrderDetailVo detail(Long orderId);
+
+        /*
+        * 生成秒杀地址
+        * */
+    String createPath(User user, Long goodsId);
+    /**
+     * 验证秒杀地址
+     * @param user
+     * @param goodsId
+     * @param path
+     * @return
+     */
+    boolean checkPath(User user, Long goodsId, String path);
+
+    boolean checkCaptcha(User user, Long goodsId, String captcha);
 }

@@ -12,9 +12,12 @@ public enum RespBeanEnum {
 
     //通用状态码
     SUCCESS(200,"SUCCESS"),
-    ERROR(200,"服务器异常"),
+    ERROR(500,"服务器异常"),
 
     //登录模块5002xx
+    ACCESS_LIMIT_REACHED(400300,"访问限制"),
+    ERROR_CAPTCHA(400200,"验证码输入错误"),
+    REQUEST_ILLEGAL(400100,"非法请求"),
     SESSION_ERROR(500210,"session不存在或者已经失效"),
     LOGINVO_ERROR(500211,"用户名或密码错误"),
     ORDER_NOT_EXIST(500215,"商品不存在"),

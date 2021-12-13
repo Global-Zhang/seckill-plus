@@ -14,15 +14,20 @@ import org.example.seckillPlus.service.IOrderService;
 import org.example.seckillPlus.service.ISeckillGoodsService;
 import org.example.seckillPlus.service.ISeckillOrderService;
 import org.example.seckillPlus.util.JsonUtil;
+import org.example.seckillPlus.util.MD5Util;
+import org.example.seckillPlus.util.UUIDUtil;
 import org.example.seckillPlus.vo.GoodsVo;
 import org.example.seckillPlus.vo.OrderDetailVo;
 import org.example.seckillPlus.vo.RespBeanEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements IOrderService {
@@ -44,18 +49,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Override
     @Transactional
     public Order seckill(User user, GoodsVo goods) {
+
+        ValueOperations valueOperations = redisTemplate.opsForValue();
         //秒杀商品表减库存
         //获取秒杀商品
         SeckillGoods seckillGoods = seckillGoodsService.getOne(new QueryWrapper<SeckillGoods>().eq("goods_id",goods.getId()));
-        //秒杀商品库存减一
+        //秒杀商品对象的库存存减一
         seckillGoods.setStockCount(seckillGoods.getStockCount()-1);
         //更新秒杀商品库存，返回的库存数大于0且有该商品时返回true
-        boolean seckillResult = seckillGoodsService.update(new UpdateWrapper<SeckillGoods>().setSql("stock_count ="+"stock_count-1")
+        boolean seckillResult = seckillGoodsService.update(new UpdateWrapper<SeckillGoods>()
+                                                    .setSql("stock_count ="+"stock_count-1")
                                                     .eq("goods_id", goods.getId())
                                                     .gt("stock_count", 0));
 
         // seckillGoodsService.updateById(seckillGoods);
-        if (!seckillResult){
+        if (seckillGoods.getStockCount() < 1){
+            //将库存为零的结果存到redis
+            valueOperations.set("isStockEmpty:" + goods.getId(),"0");
             return null;
         }
 
@@ -104,4 +114,54 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         detail.setOrder(order);
         return detail;
     }
+
+    /**
+     * 验证请求地址
+     *
+     * @param user
+     * @param goodsId
+     * @param path
+     * @return
+     */
+    @Override
+    public boolean checkPath(User user, Long goodsId, String path) {
+        if (user==null|| StringUtils.isEmpty(path)){
+            return false;
+        }
+        String redisPath = (String) redisTemplate.opsForValue().get("seckillPath:" + user.getId() + ":" + goodsId);
+        return path.equals(redisPath);
+    }
+
+    /**
+     * 生成秒杀地址
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @Override
+    public String createPath(User user, Long goodsId) {
+        String str = MD5Util.md5(UUIDUtil.uuid() + "123456");
+        redisTemplate.opsForValue().set("seckillPath:" + user.getId() + ":" + goodsId, str, 60, TimeUnit.SECONDS);
+        return str;
+    }
+
+    /**
+     * 校验验证码
+     *
+     * @param user
+     * @param goodsId
+     * @param captcha
+     * @return
+     */
+    @Override
+    public boolean checkCaptcha(User user, Long goodsId, String captcha) {
+        if (StringUtils.isEmpty(captcha)||null==user||goodsId<0){
+            return false;
+        }
+        String redisCaptcha = (String) redisTemplate.opsForValue().get("captcha:" +
+                user.getId() + ":" + goodsId);
+        return redisCaptcha.equals(captcha);
+    }
+
 }

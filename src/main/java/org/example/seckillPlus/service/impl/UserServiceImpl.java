@@ -41,7 +41,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         //根据手机号获取用户
         User user = userMapper.selectById(mobile);
         System.out.println(user.getUsername()+user.getMobile());
-        if (null==user){
+        if (user == null){
             throw new GlobalException(RespBeanEnum.LOGINVO_ERROR);
         }
         //校验密码
